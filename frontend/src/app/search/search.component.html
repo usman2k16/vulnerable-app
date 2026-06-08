@@ -1,0 +1,20 @@
+<h2>Search posts</h2>
+
+<form class="search-bar" (ngSubmit)="search()">
+  <input name="q" [(ngModel)]="q" placeholder="Search by title or content..." />
+  <button type="submit">Search</button>
+</form>
+
+@if (searched) {
+  @if (results.length === 0) {
+    <p class="empty">No posts matched your search.</p>
+  } @else {
+    @for (post of results; track post.id) {
+      <article class="card result">
+        <h3>{{ post.title }}</h3>
+        <p class="meta">by {{ post.authorUsername }}</p>
+        <p>{{ post.content }}</p>
+      </article>
+    }
+  }
+}

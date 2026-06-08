@@ -1,0 +1,23 @@
+@if (auth.currentUser(); as user) {
+  <div class="card">
+    <h2>Profile</h2>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Bio:</strong> {{ user.bio }}</p>
+
+    <h3>Edit profile</h3>
+    <form (ngSubmit)="save()">
+      <label>Bio
+        <textarea name="bio" rows="3" [(ngModel)]="bio"></textarea>
+      </label>
+      <label>Email
+        <input name="email" [(ngModel)]="email" />
+      </label>
+      <button type="submit">Save</button>
+      @if (saved) {
+        <span class="saved">Saved!</span>
+      }
+    </form>
+  </div>
+} @else {
+  <p>Please <a routerLink="/login">log in</a> to view your profile.</p>
+}

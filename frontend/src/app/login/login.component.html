@@ -1,0 +1,16 @@
+<div class="card">
+  <h2>Log in</h2>
+  <form (ngSubmit)="submit()">
+    <label>Username
+      <input name="username" [(ngModel)]="username" autocomplete="username" />
+    </label>
+    <label>Password
+      <input name="password" type="password" [(ngModel)]="password" autocomplete="current-password" />
+    </label>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+    <button type="submit">Log in</button>
+  </form>
+  <p class="hint">Demo account: <strong>alice</strong> / <strong>password123</strong></p>
+</div>

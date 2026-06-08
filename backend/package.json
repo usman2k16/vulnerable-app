@@ -1,0 +1,16 @@
+{
+  "name": "vulnerable-social-media-backend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Backend API for the vulnerable social media security-education app (Phase 0: secure baseline)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

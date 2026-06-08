@@ -1,0 +1,55 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #1d2433;
+  color: #fff;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.links {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.navbar a {
+  color: #c7d0e0;
+  text-decoration: none;
+}
+
+.navbar a.active,
+.navbar a:hover {
+  color: #fff;
+}
+
+.auth {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.who {
+  color: #8fd6a0;
+  font-weight: 600;
+}
+
+.navbar button {
+  background: #3a4660;
+  border: none;
+  color: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}

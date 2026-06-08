@@ -1,0 +1,27 @@
+<div class="card">
+  <h2>New post</h2>
+  <form (ngSubmit)="submit()">
+    <label>Title
+      <input name="title" [(ngModel)]="model.title" />
+    </label>
+    <label>Content
+      <textarea name="content" rows="4" [(ngModel)]="model.content"></textarea>
+    </label>
+    <label>Image URL
+      <input name="imageUrl" [(ngModel)]="model.imageUrl" placeholder="https://..." />
+    </label>
+    <label>Image alt text
+      <input name="imageAlt" [(ngModel)]="model.imageAlt" />
+    </label>
+    <label>Link URL
+      <input name="linkUrl" [(ngModel)]="model.linkUrl" placeholder="https://..." />
+    </label>
+    <label>Title color
+      <input name="color" [(ngModel)]="model.color" placeholder="blue, #336699, rgb(...)" />
+    </label>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+    <button type="submit">Publish</button>
+  </form>
+</div>

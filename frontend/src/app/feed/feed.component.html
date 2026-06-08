@@ -1,0 +1,51 @@
+<h2>Feed</h2>
+
+@if (posts().length === 0) {
+  <p class="empty">No posts yet. Be the first to post!</p>
+}
+
+@for (post of posts(); track post.id) {
+  <article class="post card">
+    <header class="post-head">
+      <!-- color comes from safeCssColor on the backend; bound as a style, not raw CSS text -->
+      <h3 [style.color]="post.color">{{ post.title }}</h3>
+      <span class="meta">by {{ post.authorUsername }}</span>
+    </header>
+
+    @if (post.imageUrl && post.imageUrl !== '/') {
+      <img class="post-img" [src]="post.imageUrl" [alt]="post.imageAlt" />
+    }
+
+    <!-- interpolation escapes by default: no XSS in the Phase 0 baseline -->
+    <p class="body">{{ post.content }}</p>
+
+    @if (post.linkUrl && post.linkUrl !== '/') {
+      <a class="post-link" [href]="post.linkUrl" target="_blank" rel="noopener">Read more</a>
+    }
+
+    <div class="actions">
+      <button (click)="toggleLike(post)" [disabled]="!auth.currentUser()">
+        {{ isLiked(post) ? '♥' : '♡' }} {{ post.likes.length }}
+      </button>
+      @if (isOwner(post)) {
+        <button class="danger" (click)="deletePost(post)">Delete</button>
+      }
+    </div>
+
+    <section class="comments">
+      @for (c of post.comments; track c.id) {
+        <p class="comment"><strong>{{ c.authorUsername }}:</strong> {{ c.content }}</p>
+      }
+      @if (auth.currentUser()) {
+        <div class="add-comment">
+          <input
+            [(ngModel)]="commentDrafts[post.id]"
+            name="comment-{{ post.id }}"
+            placeholder="Add a comment..."
+          />
+          <button (click)="addComment(post)">Comment</button>
+        </div>
+      }
+    </section>
+  </article>
+}

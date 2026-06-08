@@ -1,0 +1,21 @@
+<nav class="navbar">
+  <span class="brand">Vuln Social</span>
+  <div class="links">
+    <a routerLink="/feed" routerLinkActive="active">Feed</a>
+    <a routerLink="/new" routerLinkActive="active">New Post</a>
+    <a routerLink="/search" routerLinkActive="active">Search</a>
+    <a routerLink="/profile" routerLinkActive="active">Profile</a>
+  </div>
+  <div class="auth">
+    @if (auth.currentUser(); as user) {
+      <span class="who">{{ '@' + user.username }}</span>
+      <button (click)="logout()">Logout</button>
+    } @else {
+      <a routerLink="/login">Login</a>
+    }
+  </div>
+</nav>
+
+<main class="content">
+  <router-outlet></router-outlet>
+</main>

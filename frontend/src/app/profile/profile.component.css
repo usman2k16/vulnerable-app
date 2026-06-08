@@ -1,0 +1,10 @@
+.card {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.saved {
+  margin-left: 0.75rem;
+  color: #2e9e54;
+  font-weight: 600;
+}
