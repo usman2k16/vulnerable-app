@@ -7,25 +7,22 @@
 @for (post of posts(); track post.id) {
   <article class="post card">
     <header class="post-head">
-      <!-- VULNERABLE (vector 5): full style string passed through bypassSecurityTrustStyle,
-           so injected CSS declarations in `color` are applied verbatim -->
-      <h3 [style]="('color:' + post.color) | safe:'style'">{{ post.title }}</h3>
+      <!-- FIXED: color is a validated safeCssColor (backend) bound as a discrete style property -->
+      <h3 [style.color]="post.color">{{ post.title }}</h3>
       <span class="meta">by {{ post.authorUsername }}</span>
     </header>
 
-    @if (post.imageUrl) {
-      <!-- VULNERABLE (vector 3): the <img> tag is built as a raw HTML string (see rawImageTag)
-           and injected, so a crafted imageAlt breaks out of the alt attribute -->
-      <div [innerHTML]="rawImageTag(post) | safe:'html'"></div>
+    @if (post.imageUrl && post.imageUrl !== '/') {
+      <!-- FIXED: property bindings; Angular can't break out of [alt], imageAlt is attribute-escaped -->
+      <img class="post-img" [src]="post.imageUrl" [alt]="post.imageAlt" />
     }
 
-    <!-- VULNERABLE (vector 1): raw post content injected as HTML, no escaping -->
-    <p class="body" [innerHTML]="post.content | safe:'html'"></p>
+    <!-- FIXED: interpolation escapes by default -->
+    <p class="body">{{ post.content }}</p>
 
     @if (post.linkUrl && post.linkUrl !== '/') {
-      {{post.linkUrl }}
-      <!-- VULNERABLE (vector 4): href passed through bypassSecurityTrustUrl, allowing javascript: -->
-      <a class="post-link" [href]="post.linkUrl | safe:'url'" rel="noopener">Read more</a>
+      <!-- FIXED: linkUrl validated by safeUrl (backend); [href] is sanitized by Angular -->
+      <a class="post-link" [href]="post.linkUrl" target="_blank" rel="noopener">Read more</a>
     }
 
     <div class="actions">
@@ -39,8 +36,8 @@
 
     <section class="comments">
       @for (c of post.comments; track c.id) {
-        <!-- VULNERABLE (vector 2): raw comment content injected as HTML -->
-        <p class="comment"><strong>{{ c.authorUsername }}:</strong> <span [innerHTML]="c.content | safe:'html'"></span></p>
+        <!-- FIXED: interpolation escapes by default -->
+        <p class="comment"><strong>{{ c.authorUsername }}:</strong> {{ c.content }}</p>
       }
       @if (auth.currentUser()) {
         <div class="add-comment">
@@ -51,7 +48,7 @@
           />
           <button (click)="addComment(post)">Comment</button>
         </div>
-        <app-copy-hint label="Stored XSS — paste:" [payload]="commentXss" />
+        <app-copy-hint label="✅ Now escaped — paste to confirm it shows as text (no popup):" [payload]="commentXss" />
       }
     </section>
   </article>

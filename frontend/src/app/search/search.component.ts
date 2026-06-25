@@ -3,13 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PostService } from '../services/post.service';
 import { Post } from '../services/models';
-import { SafePipe } from '../services/safe.pipe';
 import { CopyHintComponent } from '../shared/copy-hint.component';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [FormsModule, SafePipe, CopyHintComponent],
+  imports: [FormsModule, CopyHintComponent],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })

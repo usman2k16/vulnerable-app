@@ -1,21 +1,23 @@
 // Security headers.
-// VULNERABLE (Commit 2): the CSP is WEAKENED to allow inline scripts/styles
-// ('unsafe-inline'), which would let inline event handlers and injected styles run.
-// NOTE: in this split-origin setup the page is served by `ng serve`, not Express, so this
-// header does not actually govern the SPA page -- the XSS in Commit 2 fires because the
-// Angular DomSanitizer is bypassed on the frontend. A real, page-governing CSP demo comes
-// in Commit 6. Commit 3 restores the strong policy below.
+// A single, STATIC strong Content-Security-Policy. CSP is intentionally NOT toggled during the
+// XSS commits -- it's covered as its own subject in Commit 6.
+// Note: in this split-origin setup the page is served by `ng serve`, so this header (on Express
+// API responses) does not currently govern the SPA page; Commit 6 will make CSP govern the page
+// (via a <meta> CSP in index.html or by serving the built app through Express).
 
 function securityHeaders(req, res, next) {
   res.setHeader(
     'Content-Security-Policy',
     [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
+      "default-src 'none'",
+      "script-src 'self'",
+      "style-src 'self'",
       "img-src 'self' data: https:",
       "font-src 'self'",
       "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
     ].join('; ')
   );
   next();

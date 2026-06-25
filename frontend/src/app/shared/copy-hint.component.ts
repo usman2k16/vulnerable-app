@@ -1,14 +1,14 @@
 import { Component, Input } from '@angular/core';
 
-// Commit 2 (XSS): a small reusable hint that shows an attack payload with a copy button.
-// Rendered under the relevant inputs so the payload can be pasted where it's used.
-// Removed / flipped to "now escaped" in Commit 3.
+// A small reusable hint that shows a payload with a copy button, rendered under the relevant
+// input. In Commit 3 the labels are reframed to "now escaped — verify it's inert"; the label
+// carries its own leading icon, so none is hardcoded here.
 @Component({
   selector: 'app-copy-hint',
   standalone: true,
   template: `
     <small class="xss-hint">
-      💉 {{ label }}
+      {{ label }}
       <code>{{ payload }}</code>
       <button
         type="button"
@@ -28,7 +28,7 @@ import { Component, Input } from '@angular/core';
         padding: 0 0.3rem;
         font-size: 0.8rem;
         line-height: 1;
-        color: #b04632;
+        color: #2e7d32;
       }
       .copy-btn:hover {
         text-decoration: underline;

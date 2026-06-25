@@ -5,11 +5,11 @@
   <button type="submit">Search</button>
 </form>
 
-<app-copy-hint label="Reflected XSS — search this (it lands in /search?q=):" [payload]="reflectedXss" />
+<app-copy-hint label="✅ Now escaped — search this; it shows as text (no popup):" [payload]="reflectedXss" />
 
 @if (searched) {
-  <!-- VULNERABLE (reflected): the echoed query is injected as HTML -->
-  <p class="result-query">Results for: <span [innerHTML]="resultQuery | safe:'html'"></span></p>
+  <!-- FIXED: echoed query is escaped server-side and rendered via interpolation -->
+  <p class="result-query">Results for: {{ resultQuery }}</p>
 
   @if (results.length === 0) {
     <p class="empty">No posts matched your search.</p>

@@ -2,14 +2,14 @@
   <div class="card">
     <h2>Profile</h2>
     <p><strong>Username:</strong> {{ user.username }}</p>
-    <!-- VULNERABLE (vector 6): raw bio injected as HTML -->
-    <p><strong>Bio:</strong> <span [innerHTML]="user.bio | safe:'html'"></span></p>
+    <!-- FIXED: interpolation escapes by default (bio is also HTML-escaped on the backend) -->
+    <p><strong>Bio:</strong> {{ user.bio }}</p>
 
     <h3>Edit profile</h3>
     <form (ngSubmit)="save()">
       <label>Bio
         <textarea name="bio" rows="3" [(ngModel)]="bio"></textarea>
-        <app-copy-hint label="Stored XSS — paste, then reload:" [payload]="bioXss" />
+        <app-copy-hint label="✅ Now escaped — save &amp; reload to confirm it shows as text:" [payload]="bioXss" />
       </label>
       <label>Email
         <input name="email" [(ngModel)]="email" />

@@ -75,18 +75,18 @@ button.danger {
   font-size: 0.9rem;
 }
 
-/* Commit 2 (XSS): copy-pasteable attack payload hint shown under inputs.
-   These are removed/flipped to "now escaped" in Commit 3. */
+/* Copy-pasteable payload hint shown under inputs.
+   Commit 3 (XSS fixed): reframed to "verify it's now inert" — calm green palette. */
 .xss-hint {
   display: block;
   margin-top: 0.35rem;
   font-weight: 400;
   font-size: 0.8rem;
-  color: #b04632;
+  color: #2e7d32;
 }
 
 .xss-hint code {
-  background: #fbeae7;
+  background: #e6f4ea;
   padding: 0.05rem 0.3rem;
   border-radius: 3px;
   user-select: all; /* one click selects the whole payload */

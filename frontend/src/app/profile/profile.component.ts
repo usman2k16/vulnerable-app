@@ -3,13 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
-import { SafePipe } from '../services/safe.pipe';
 import { CopyHintComponent } from '../shared/copy-hint.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, RouterLink, SafePipe, CopyHintComponent],
+  imports: [FormsModule, RouterLink, CopyHintComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })

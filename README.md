@@ -22,7 +22,8 @@ Later commits will (intentionally) weaken this baseline and then re-harden it. S
 
 ## Commit 2 — XSS Vulnerabilities Added ⚠️
 
-This commit **intentionally introduces 6 XSS vectors**. Do not treat this state as safe.
+This commit **intentionally introduces 7 XSS vectors** (6 stored + 1 reflected). Do not treat
+this state as safe.
 
 A crucial detail specific to Angular: **removing the backend escaping is not enough** — Angular
 escapes and sanitizes by default. Each vector therefore required **two changes**:
@@ -32,10 +33,9 @@ escapes and sanitizes by default. Each vector therefore required **two changes**
    (`frontend/src/app/services/safe.pipe.ts`) that calls `DomSanitizer.bypassSecurityTrust*` —
    the classic real-world Angular XSS footgun.
 
-The CSP in `backend/middleware/headers.js` was also weakened to `'unsafe-inline'`. (In this
-split-origin setup the page is served by `ng serve`, not Express, so this header doesn't govern
-the SPA page yet — the working CSP demo comes in Commit 6. The XSS here fires because of the
-sanitizer bypass.)
+CSP is intentionally left **strong and unchanged** here — the XSS fires purely because the Angular
+sanitizer is bypassed, not because of any CSP change. (In this split-origin setup the Express CSP
+header doesn't govern the `ng serve` page anyway; CSP gets its own treatment in Commit 6.)
 
 | # | Vector | Field | Example payload |
 |---|--------|-------|-----------------|
@@ -59,7 +59,35 @@ attacker pages you open in a browser, not just instructions.)
 **XSS types covered:** Stored (vectors 1–6, across HTML / attribute / URL / CSS contexts) and
 **Reflected** (vector 7, via the search query — deliver it with a crafted link like
 `http://localhost:4200/search?q=<img src=x onerror="alert('Reflected XSS')">`). DOM-based XSS is
-intentionally not included. Commit 3 will reverse all of this.
+intentionally not included. Commit 3 reverses all of this.
+
+## Commit 3 — XSS Fixed ✅
+
+All 7 vectors from Commit 2 are closed by reversing both layers (backend escaping + safe frontend
+bindings).
+
+**Backend — context-specific escaping re-applied** (`backend/utils/escape.js`):
+
+| Output context | Escaper | Used in |
+|---|---|---|
+| HTML body | `htmlEscape` | post title/content, comment, bio, email, search query echo |
+| HTML attribute | `attributeEscape` | image alt |
+| URL | `safeUrl` (allows only http/https/relative) | image URL, link URL |
+| CSS color | `safeCssColor` (allowlist, else `black`) | post color |
+
+**Frontend — safe Angular bindings restored** (the `SafePipe` bypass is deleted entirely):
+interpolation `{{ }}` for content/comment/bio/search; `[src]`/`[alt]`/`[href]` property bindings
+(Angular sanitizes these); `[style.color]` instead of a raw style string.
+
+**CSP** is unchanged — it stays the strong static policy throughout the XSS commits and is
+covered on its own in Commit 6.
+
+**Verify the fix:** the in-app hints are reframed to green "✅ now escaped" notes — paste the same
+payloads and they render as literal text with no popup. The reflected link
+(`/search?q=<img …>`) likewise shows as text.
+
+Defense-in-depth: both the backend escaping **and** the safe frontend bindings independently stop
+the attack — either layer alone would suffice, but real apps should do both.
 
 ## Architecture
 
@@ -127,8 +155,9 @@ exploits/       Standalone HTML attack files (payloads added in later commits)
 
 0. **Setup + secure baseline** — *(this commit)* full app, no vulnerabilities.
 1. *(merged into Phase 0)*
-2. **Add XSS vulnerabilities** — remove escaping, weaken CSP; 6 XSS vectors become exploitable.
-3. **Fix XSS** — re-apply context-specific escaping, restore strong CSP.
+2. **Add XSS vulnerabilities** — remove escaping + bypass Angular's sanitizer; 7 XSS vectors
+   (6 stored + 1 reflected) become exploitable.
+3. **Fix XSS** — re-apply context-specific escaping and restore safe Angular bindings.
 4. **Add CSRF vulnerabilities** — remove token checks and `SameSite`; 3 CSRF vectors.
 5. **Fix CSRF** — token generation + validation, `SameSite` cookies.
 6. **CSP** — demonstrate a weak CSP, then harden it.

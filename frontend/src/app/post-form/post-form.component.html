@@ -6,23 +6,23 @@
     </label>
     <label>Content
       <textarea name="content" rows="4" [(ngModel)]="model.content"></textarea>
-      <app-copy-hint label="Stored XSS — paste:" [payload]="xss.content" />
+      <app-copy-hint label="✅ Now escaped — paste to confirm it shows as text (no popup):" [payload]="xss.content" />
     </label>
     <label>Image URL
       <input name="imageUrl" [(ngModel)]="model.imageUrl" placeholder="https://..." />
-      <app-copy-hint label="Attribute XSS — first set this to:" [payload]="'x'" />
+      <app-copy-hint label="✅ Attribute XSS blocked — set this to:" [payload]="'x'" />
     </label>
     <label>Image alt text
       <input name="imageAlt" [(ngModel)]="model.imageAlt" />
-      <app-copy-hint label="Attribute XSS — then set alt to:" [payload]="xss.imageAlt" />
+      <app-copy-hint label="✅ …then this alt; it stays inside the attribute:" [payload]="xss.imageAlt" />
     </label>
     <label>Link URL
       <input name="linkUrl" [(ngModel)]="model.linkUrl" placeholder="https://..." />
-      <app-copy-hint label="URL XSS — paste, then click Read more:" [payload]="xss.linkUrl" />
+      <app-copy-hint label="✅ javascript: now neutralized — paste, then click Read more:" [payload]="xss.linkUrl" />
     </label>
     <label>Title color
       <input name="color" [(ngModel)]="model.color" placeholder="blue, #336699, rgb(...)" />
-      <app-copy-hint label="CSS injection — paste:" [payload]="xss.color" />
+      <app-copy-hint label="✅ CSS injection rejected — paste; falls back to a safe color:" [payload]="xss.color" />
     </label>
     @if (error) {
       <p class="error">{{ error }}</p>

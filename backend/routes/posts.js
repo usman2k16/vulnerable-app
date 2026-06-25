@@ -1,7 +1,8 @@
 const express = require('express');
 const { posts, comments, users, nextPostId } = require('../database');
 const { requireAuth } = require('../middleware/auth');
-// NOTE (Commit 2 - XSS): post fields and the search query are no longer escaped.
+// Commit 3 (XSS fixed): context-specific escaping is re-applied to all user input.
+const { htmlEscape, attributeEscape, safeCssColor, safeUrl } = require('../utils/escape');
 
 const router = express.Router();
 
@@ -30,8 +31,7 @@ router.get('/posts', (req, res) => {
 });
 
 // GET /search?q= -- search posts by title/content.
-// VULNERABLE (Commit 2, reflected XSS, vector 7): the query is echoed back RAW. Combined with the
-// search page rendering it via [innerHTML], a crafted /search?q=<payload> link reflects + fires.
+// Commit 3: the echoed query is HTML-escaped, killing the reflected XSS (vector 7).
 router.get('/search', (req, res) => {
   const q = (req.query.q || '').toString();
   const needle = q.toLowerCase();
@@ -42,23 +42,22 @@ router.get('/search', (req, res) => {
         p.content.toLowerCase().includes(needle)
     )
     .map(hydratePost);
-  res.json({ query: q, results });
+  res.json({ query: htmlEscape(q), results });
 });
 
 // POST /posts -- create a post.
-// VULNERABLE (Commit 2): user input is stored RAW, with no escaping/validation.
-// Combined with the frontend's sanitizer bypass, this enables stored/attribute/URL/CSS XSS.
+// Commit 3 (XSS fixed): every field is escaped for its output context before storage.
 router.post('/posts', requireAuth, (req, res) => {
   const { title, content, imageUrl, imageAlt, linkUrl, color } = req.body || {};
   const id = nextPostId();
   const post = {
     id,
-    title,        // raw (rendered via interpolation, so not a vector by itself)
-    content,      // raw -> stored XSS (vector 1)
-    imageUrl,     // raw
-    imageAlt,     // raw -> attribute XSS (vector 3)
-    linkUrl,      // raw -> javascript: URL XSS (vector 4)
-    color,        // raw -> CSS injection (vector 5)
+    title: htmlEscape(title),
+    content: htmlEscape(content),
+    imageUrl: safeUrl(imageUrl),
+    imageAlt: attributeEscape(imageAlt),
+    linkUrl: safeUrl(linkUrl),
+    color: safeCssColor(color),
     createdBy: req.userId,
     createdAt: new Date().toISOString(),
     likes: [],
