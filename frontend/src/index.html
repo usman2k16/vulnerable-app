@@ -6,14 +6,15 @@
   <base href="/">
 
   <!--
-    Commit 6 (CSP): this meta makes the policy govern the actual SPA document. It must be inline
-    here (the browser needs it while parsing the head). Visit /csp to experiment with it.
-
-    VULNERABLE (active): script-src allows 'unsafe-inline' + 'unsafe-eval', so injected inline
-    scripts run -> CSP provides NO XSS backstop. The next commit hardens this to:
-      script-src 'self'; img-src 'self' data: https:; (+ base-uri 'self'; form-action 'self'; object-src 'none')
+    Commit 6 (CSP FIX): the policy is now STRICT and governs the SPA document. Inline scripts,
+    eval, external/CDN scripts, non-https images, and cross-origin fetches are all blocked
+    (the /csp playground demos all report "blocked", and a strict script-src is what backstops the
+    XSS payloads from Commits 2-3). To revert to the weak/vulnerable policy for comparison, set:
+      script-src 'self' 'unsafe-inline' 'unsafe-eval'  (and add http: to img-src), then reload.
+    Notes: style-src keeps 'unsafe-inline' because Angular injects runtime styles; connect-src must
+    include http://localhost:3000 for the app's API calls; frame-ancestors is header-only (not via meta).
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; font-src 'self'; connect-src 'self' http://localhost:3000 https://example.com">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:3000; base-uri 'self'; form-action 'self'; object-src 'none'">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">

@@ -173,6 +173,31 @@ inline script **executes** (red = dangerous); the next commit's strict policy wi
 > Dev note: under `ng serve`, the Vite-based dev server may emit a couple of CSP console warnings
 > (HMR); the app still loads.
 
+## Commit 6 (fix) — CSP Hardened ✅
+
+The active `<meta>` policy is now strict:
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:3000;
+base-uri 'self'; form-action 'self'; object-src 'none'
+```
+Every `/csp` playground demo now reports **blocked**: inline `<script>`, external/CDN script,
+non-https image, and cross-origin fetch — all refused, each logged as a `securitypolicyviolation`.
+The key line is **`script-src 'self'`**: no inline scripts and no `eval`, which is exactly what
+backstops the Commit 2–3 `<img onerror=…>` XSS payloads even if escaping ever failed.
+
+What each value is doing — and the necessary loosenings:
+- `script-src 'self'` — only first-party bundles; blocks inline + eval + CDN scripts.
+- `style-src 'self' 'unsafe-inline'` — kept, because **Angular injects runtime inline styles**
+  (removing it breaks the app's styling; the strict alternative is CSP nonces).
+- `connect-src 'self' http://localhost:3000` — required, or the SPA's API calls are CSP-blocked.
+- `img-src 'self' data: https:` — drops the `http:` that the weak policy allowed.
+- `base-uri 'self'`, `form-action 'self'`, `object-src 'none'` — lock down base-tag hijacking,
+  form exfiltration, and plugins. (`frame-ancestors` is header-only and can't be set via `<meta>`.)
+
+To compare, revert the meta to the weak policy (`script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+`img-src … http:`) and reload — the inline script executes again.
+
 ## Architecture
 
 | Component | Technology | Notes |
