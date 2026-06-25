@@ -1,36 +1,42 @@
-const crypto = require('crypto');
-const { sessions, users } = require('../database');
+const crypto = require("crypto");
+const { sessions, users } = require("../database");
 
-const SESSION_COOKIE = 'sessionId';
+const SESSION_COOKIE = "sessionId";
 
 function createSession(userId) {
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = crypto.randomBytes(32).toString("hex");
+  // Commit 5 (CSRF fix): a random per-session synchronizer token the real app must echo back
+  // in the X-CSRF-Token header on state-changing requests. An attacker can't read or guess it.
+  const csrfToken = crypto.randomBytes(32).toString("hex");
   sessions[token] = {
     userId,
-    csrfToken: '', // populated in Phase 4 (CSRF lessons)
+    csrfToken,
     createdAt: new Date().toISOString(),
   };
-  return token;
+  return { token, csrfToken };
 }
 
 function setSessionCookie(res, token) {
-  // VULNERABLE (Commit 4 - CSRF): SameSite=None means this cookie is attached to *cross-site*
-  // requests too -- including ones forged by an attacker page -- which is exactly what makes CSRF
-  // possible. Note :4200 and :3000 are different ORIGINS but the SAME SITE (site ignores port),
-  // so the real app would work fine with SameSite=Strict; Commit 5 switches to Strict (+ a CSRF
-  // token) as the fix. (Secure is fine here: browsers treat http://localhost as a secure context.)
+  // Commit 5 (CSRF fix): SameSite=Strict -> the browser no longer attaches this cookie to
+  // cross-site requests, so an attacker page's forged request arrives unauthenticated. The real
+  // app still works because :4200 and :3000 are the SAME SITE (site ignores port), so its calls
+  // are same-site. This is layer 1 of the defense; the CSRF token is layer 2.
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: "none",
     secure: true,
-    path: '/',
+    path: "/",
   });
 }
 
 function destroySession(req, res) {
   const token = req.cookies && req.cookies[SESSION_COOKIE];
   if (token) delete sessions[token];
-  res.clearCookie(SESSION_COOKIE, { path: '/', sameSite: 'none', secure: true });
+  res.clearCookie(SESSION_COOKIE, {
+    path: "/",
+    sameSite: "strict",
+    secure: true,
+  });
 }
 
 // Attaches req.userId / req.user when a valid session cookie is present.
@@ -48,7 +54,7 @@ function loadSession(req, res, next) {
 
 // Guards protected / state-changing routes.
 function requireAuth(req, res, next) {
-  if (!req.userId) return res.status(401).json({ error: 'Not logged in' });
+  if (!req.userId) return res.status(401).json({ error: "Not logged in" });
   next();
 }
 

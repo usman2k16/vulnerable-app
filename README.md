@@ -123,6 +123,27 @@ a real fix in Commit 5.
 **Run it:** log in as `alice` at `http://localhost:4200`, then open `7`/`8` via `file://` in the
 **same browser** → the like count rises / the bio + email change, with no action from alice.
 
+## Commit 5 — CSRF Fixed ✅
+
+Two independent defenses (defense-in-depth):
+
+1. **`SameSite=Strict` session cookie** ([backend/middleware/auth.js](backend/middleware/auth.js)) —
+   the browser no longer attaches the cookie to **cross-site** requests, so an attacker page's
+   forged request arrives unauthenticated (`401`). The real app keeps working because `:4200 → :3000`
+   is **same-site** (site ignores port), so its calls are same-site.
+2. **Synchronizer CSRF token** ([backend/middleware/csrf.js](backend/middleware/csrf.js)) — a random
+   per-session token returned by `/login` and `/me`. The Angular app stores it and echoes it as an
+   `X-CSRF-Token` header on every state-changing request (a functional `HttpInterceptor`). The server
+   rejects any mismatch with `403`. The attacker can't read the token (SOP/CORS) or guess it
+   (random), and the custom header also forces a CORS preflight.
+
+`verifyCsrf` runs after `loadSession` and guards all non-safe methods (exempting `/login`, which has
+no session yet; unauthenticated requests fall through to the existing `401`).
+
+**Verify the fix:** re-running the `file://` exploits from Commit 4 now does nothing — the like
+count and profile stay unchanged. In the app, normal actions still work because the interceptor
+supplies the token.
+
 ## Architecture
 
 | Component | Technology | Notes |

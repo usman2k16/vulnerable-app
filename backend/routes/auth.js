@@ -17,9 +17,11 @@ router.post('/login', (req, res) => {
   if (!user || user.password !== password) {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
-  const token = createSession(user.id);
+  const { token, csrfToken } = createSession(user.id);
   setSessionCookie(res, token);
-  res.json({ user: publicUser(user) });
+  // Hand the CSRF token to the real app (in the response body). The attacker can't read this
+  // cross-site, so only our own SPA can echo it back in the X-CSRF-Token header.
+  res.json({ user: publicUser(user), csrfToken });
 });
 
 // POST /logout
@@ -28,10 +30,10 @@ router.post('/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// GET /me -- current logged-in user (lets the SPA restore session state on reload)
+// GET /me -- current logged-in user (lets the SPA restore session + CSRF token on reload)
 router.get('/me', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  res.json({ user: publicUser(req.user) });
+  res.json({ user: publicUser(req.user), csrfToken: req.session.csrfToken });
 });
 
 // GET /register -- stub for now (registration UI added later)
