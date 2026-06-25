@@ -23,6 +23,9 @@ app.use(
 );
 
 app.use(express.json());
+// Commit 4 (CSRF demo): parse HTML-form bodies too. This is also what lets a cross-site CSRF
+// <form> (which sends application/x-www-form-urlencoded) populate req.body on the profile route.
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(securityHeaders);
 app.use(loadSession);

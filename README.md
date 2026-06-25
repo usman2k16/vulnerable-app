@@ -89,6 +89,40 @@ payloads and they render as literal text with no popup. The reflected link
 Defense-in-depth: both the backend escaping **and** the safe frontend bindings independently stop
 the attack — either layer alone would suffice, but real apps should do both.
 
+## Commit 4 — CSRF Vulnerabilities ⚠️
+
+**CSRF (Cross-Site Request Forgery):** a malicious page makes the *victim's own browser* send a
+state-changing request to our API. The browser auto-attaches the victim's `sessionId` cookie, so
+the server sees an authenticated request the victim never intended. The attacker can't read the
+response (CORS blocks that) — they just want the side effect.
+
+The app is **already** CSRF-vulnerable: state-changing routes trust the session cookie alone, with
+no anti-CSRF token, and the cookie is `SameSite=None` (sent on cross-site requests). This commit
+adds the **attacker pages** plus `express.urlencoded()` so a forged form POST's body is parsed.
+
+**Two demonstrated vectors** (`exploits/`, opened as `file://`):
+
+| Exploit file | Endpoint | Effect |
+|---|---|---|
+| `7-csrf-like.html` | `POST /posts/:id/like` | forces the victim to like a post (no body needed) |
+| `8-csrf-profile.html` | `POST /profile/update` | overwrites the victim's bio + email |
+
+**Why delete is *not* exploitable here (and is skipped):** an HTML form can only send GET/POST,
+and a cross-site `fetch('DELETE')` triggers a CORS **preflight** that our origin-locked CORS
+rejects. Only "simple" requests (form GET/POST with `application/x-www-form-urlencoded`) sail
+through without preflight — those are the CSRF channel. JSON POSTs are likewise preflighted, so
+the only forgeable routes are the form-shaped ones above.
+
+**Same-site vs cross-origin (important):** `localhost:4200` and `localhost:3000` are different
+**origins** (port differs) but the **same site** (site ignores port). `SameSite` cookies care
+about *site*, so the real app works even with `SameSite=Strict`; `SameSite=None` (current) is the
+dangerous setting that also sends the cookie to a genuinely cross-site attacker page (a `file://`,
+origin `null`). That's why the exploits must be opened as `file://`, and why `SameSite=Strict` is
+a real fix in Commit 5.
+
+**Run it:** log in as `alice` at `http://localhost:4200`, then open `7`/`8` via `file://` in the
+**same browser** → the like count rises / the bio + email change, with no action from alice.
+
 ## Architecture
 
 | Component | Technology | Notes |
@@ -130,8 +164,12 @@ Open http://localhost:4200 and log in with the demo account:
 ```
 backend/        Express API (routes, middleware, in-memory database, escaping utils)
 frontend/       Angular app (components, services, routing)
-exploits/       Standalone HTML attack files (payloads added in later commits)
+exploits/       Standalone HTML attacker pages (CSRF)
+docs/           Deep-dive write-ups for quick recap
 ```
+
+**Reference docs:** [docs/xss-deep-dive.md](docs/xss-deep-dive.md) ·
+[docs/csrf-deep-dive.md](docs/csrf-deep-dive.md)
 
 ## API reference
 
@@ -142,14 +180,14 @@ exploits/       Standalone HTML attack files (payloads added in later commits)
 | GET    | `/me` | current logged-in user |
 | GET    | `/posts` | all posts with embedded comments |
 | POST   | `/posts` | create post `{ title, content, imageUrl, imageAlt, linkUrl, color }` |
-| DELETE | `/posts/:id` | owner only (no CSRF token until Phase 4) |
+| DELETE | `/posts/:id` | owner only (no CSRF token until Commit 5) |
 | GET    | `/search?q=` | search posts by title/content |
 | POST   | `/posts/:id/comments` | `{ content }` |
 | DELETE | `/posts/:id/comments/:commentId` | owner only |
-| POST   | `/posts/:id/like` | like a post (no CSRF token until Phase 4) |
+| POST   | `/posts/:id/like` | like a post (no CSRF token until Commit 5) |
 | POST   | `/posts/:id/unlike` | remove a like |
 | GET    | `/api/users/:id` | user profile |
-| POST   | `/profile/update` | `{ bio, email }` (no CSRF token until Phase 4) |
+| POST   | `/profile/update` | `{ bio, email }` (no CSRF token until Commit 5) |
 
 ## The 6-commit learning plan
 
@@ -158,6 +196,7 @@ exploits/       Standalone HTML attack files (payloads added in later commits)
 2. **Add XSS vulnerabilities** — remove escaping + bypass Angular's sanitizer; 7 XSS vectors
    (6 stored + 1 reflected) become exploitable.
 3. **Fix XSS** — re-apply context-specific escaping and restore safe Angular bindings.
-4. **Add CSRF vulnerabilities** — remove token checks and `SameSite`; 3 CSRF vectors.
-5. **Fix CSRF** — token generation + validation, `SameSite` cookies.
+4. **Demonstrate CSRF** — attacker pages for 2 form-POST vectors (like, profile); delete is not
+   form-CSRF-able here and is skipped.
+5. **Fix CSRF** — `SameSite=Strict` cookie + synchronizer CSRF token (validated server-side).
 6. **CSP** — demonstrate a weak CSP, then harden it.

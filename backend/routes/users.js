@@ -18,8 +18,10 @@ router.get('/api/users/:id', (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-// POST /profile/update { bio, email } -- (No CSRF token yet -- that's Phase 4.)
+// POST /profile/update { bio, email }
 // Commit 3 (XSS fixed): bio/email are HTML-escaped before storage (fixes vector 6).
+// VULNERABLE (Commit 4 - CSRF): session-cookie-only auth, no CSRF token -- a cross-site form POST
+// can overwrite the victim's bio/email. Fixed in Commit 5.
 router.post('/profile/update', requireAuth, (req, res) => {
   const user = users[req.userId];
   const { bio, email } = req.body || {};

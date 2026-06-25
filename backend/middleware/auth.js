@@ -14,9 +14,11 @@ function createSession(userId) {
 }
 
 function setSessionCookie(res, token) {
-  // SameSite=None + Secure so the cookie is sent on cross-origin XHR from the
-  // Angular dev server (http://localhost:4200). Chrome exempts localhost from
-  // the "Secure requires HTTPS" rule. Cookie attributes are revisited in Phase 4/5.
+  // VULNERABLE (Commit 4 - CSRF): SameSite=None means this cookie is attached to *cross-site*
+  // requests too -- including ones forged by an attacker page -- which is exactly what makes CSRF
+  // possible. Note :4200 and :3000 are different ORIGINS but the SAME SITE (site ignores port),
+  // so the real app would work fine with SameSite=Strict; Commit 5 switches to Strict (+ a CSRF
+  // token) as the fix. (Secure is fine here: browsers treat http://localhost as a secure context.)
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'none',
