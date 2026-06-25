@@ -1,9 +1,8 @@
 // Security headers.
-// A single, STATIC strong Content-Security-Policy. CSP is intentionally NOT toggled during the
-// XSS commits -- it's covered as its own subject in Commit 6.
-// Note: in this split-origin setup the page is served by `ng serve`, so this header (on Express
-// API responses) does not currently govern the SPA page; Commit 6 will make CSP govern the page
-// (via a <meta> CSP in index.html or by serving the built app through Express).
+// A single, STATIC strong Content-Security-Policy on API responses.
+// Commit 6: the CSP that actually governs the SPA page lives in frontend/src/index.html as a
+// <meta> tag (a header on these JSON API responses can't govern the ng-serve page). This header
+// is kept as defense-in-depth on the API surface; the page policy + /csp playground are the lesson.
 
 function securityHeaders(req, res, next) {
   res.setHeader(

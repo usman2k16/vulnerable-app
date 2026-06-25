@@ -144,6 +144,35 @@ no session yet; unauthenticated requests fall through to the existing `401`).
 count and profile stay unchanged. In the app, normal actions still work because the interceptor
 supplies the token.
 
+## Commit 6 — Weak CSP ⚠️
+
+A **Content-Security-Policy** is a browser-enforced allowlist for what a page may load/run — and a
+key **backstop against XSS**: a strict `script-src 'self'` blocks inline handlers like
+`<img onerror=…>` even if escaping fails.
+
+**Where it lives:** a CSP only governs the **document it's attached to**, via a response *header* or
+a `<meta>` in the page. The SPA is served by `ng serve` (not Express), so the policy is a **`<meta>`
+in [frontend/src/index.html](frontend/src/index.html)** — that's the only way to attach it to the
+real page. (The Express API header never reaches the page; it only rides on JSON responses.)
+
+This commit ships the **weak / vulnerable** policy on purpose (the fix is the next commit):
+```
+default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval';
+style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:;
+font-src 'self'; connect-src 'self' http://localhost:3000
+```
+- `script-src … 'unsafe-inline' 'unsafe-eval'` — inline scripts and `eval` are allowed, so CSP
+  provides **no XSS backstop** (an injected inline handler would run).
+- `img-src … http:` — also allows insecure image origins.
+
+**Playground:** the **`/csp`** route is an interactive component — buttons that attempt inline
+`<script>` injection, a cross-origin script, a non-https image, and a cross-origin fetch, each
+reporting allowed/blocked, plus a **live `securitypolicyviolation` log**. Under this weak policy the
+inline script **executes** (red = dangerous); the next commit's strict policy will block it.
+
+> Dev note: under `ng serve`, the Vite-based dev server may emit a couple of CSP console warnings
+> (HMR); the app still loads.
+
 ## Architecture
 
 | Component | Technology | Notes |

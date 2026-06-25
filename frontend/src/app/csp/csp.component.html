@@ -1,0 +1,47 @@
+<div class="card">
+  <h2>CSP Playground</h2>
+  <p class="muted">
+    This page's Content-Security-Policy is set by a <code>&lt;meta&gt;</code> in
+    <code>index.html</code>. CSP is document-level and fixed at load — to compare weak vs strict,
+    swap the active meta in <code>index.html</code> and reload. The buttons below attempt risky
+    actions; watch the browser allow or block them.
+  </p>
+
+  <h3>Active policy</h3>
+  <pre class="policy">{{ policy() }}</pre>
+
+  <div class="actions">
+    <button (click)="tryInlineScript()">Inject inline &lt;script&gt;</button>
+    <button (click)="tryExternalScript()">Load cross-origin script</button>
+    <button (click)="tryImage()">Load non-https image</button>
+    <button (click)="tryFetch()">Fetch other origin</button>
+    <button class="ghost" (click)="clear()">Clear</button>
+  </div>
+
+  <h3>Results</h3>
+  @if (results().length === 0) {
+    <p class="muted">No attempts yet — click a button above.</p>
+  }
+  <ul class="results">
+    @for (r of results(); track $index) {
+      <li [class.ok]="r.ok" [class.blocked]="!r.ok">
+        <strong>{{ r.label }}</strong> — {{ r.outcome }}
+      </li>
+    }
+  </ul>
+
+  <h3>CSP violations (live)</h3>
+  @if (violations().length === 0) {
+    <p class="muted">None yet. Under the strict policy, the script/eval/image attempts show up here.</p>
+  }
+  <ul class="violations">
+    @for (v of violations(); track $index) {
+      <li><code>{{ v.directive }}</code> blocked <code>{{ v.blockedUri }}</code></li>
+    }
+  </ul>
+
+  <p class="muted tiein">
+    Tie-in to XSS: the strict <code>script-src 'self'</code> is exactly what blocks the Commit 2
+    <code>&lt;img onerror=…&gt;</code> payloads from executing — defense-in-depth behind escaping.
+  </p>
+</div>

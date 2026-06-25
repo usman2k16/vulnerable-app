@@ -4,6 +4,17 @@
   <meta charset="utf-8">
   <title>Frontend</title>
   <base href="/">
+
+  <!--
+    Commit 6 (CSP): this meta makes the policy govern the actual SPA document. It must be inline
+    here (the browser needs it while parsing the head). Visit /csp to experiment with it.
+
+    VULNERABLE (active): script-src allows 'unsafe-inline' + 'unsafe-eval', so injected inline
+    scripts run -> CSP provides NO XSS backstop. The next commit hardens this to:
+      script-src 'self'; img-src 'self' data: https:; (+ base-uri 'self'; form-action 'self'; object-src 'none')
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; font-src 'self'; connect-src 'self' http://localhost:3000 https://example.com">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
