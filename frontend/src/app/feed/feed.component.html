@@ -7,20 +7,25 @@
 @for (post of posts(); track post.id) {
   <article class="post card">
     <header class="post-head">
-      <!-- color comes from safeCssColor on the backend; bound as a style, not raw CSS text -->
-      <h3 [style.color]="post.color">{{ post.title }}</h3>
+      <!-- VULNERABLE (vector 5): full style string passed through bypassSecurityTrustStyle,
+           so injected CSS declarations in `color` are applied verbatim -->
+      <h3 [style]="('color:' + post.color) | safe:'style'">{{ post.title }}</h3>
       <span class="meta">by {{ post.authorUsername }}</span>
     </header>
 
-    @if (post.imageUrl && post.imageUrl !== '/') {
-      <img class="post-img" [src]="post.imageUrl" [alt]="post.imageAlt" />
+    @if (post.imageUrl) {
+      <!-- VULNERABLE (vector 3): the <img> tag is built as a raw HTML string (see rawImageTag)
+           and injected, so a crafted imageAlt breaks out of the alt attribute -->
+      <div [innerHTML]="rawImageTag(post) | safe:'html'"></div>
     }
 
-    <!-- interpolation escapes by default: no XSS in the Phase 0 baseline -->
-    <p class="body">{{ post.content }}</p>
+    <!-- VULNERABLE (vector 1): raw post content injected as HTML, no escaping -->
+    <p class="body" [innerHTML]="post.content | safe:'html'"></p>
 
     @if (post.linkUrl && post.linkUrl !== '/') {
-      <a class="post-link" [href]="post.linkUrl" target="_blank" rel="noopener">Read more</a>
+      {{post.linkUrl }}
+      <!-- VULNERABLE (vector 4): href passed through bypassSecurityTrustUrl, allowing javascript: -->
+      <a class="post-link" [href]="post.linkUrl | safe:'url'" rel="noopener">Read more</a>
     }
 
     <div class="actions">
@@ -34,7 +39,8 @@
 
     <section class="comments">
       @for (c of post.comments; track c.id) {
-        <p class="comment"><strong>{{ c.authorUsername }}:</strong> {{ c.content }}</p>
+        <!-- VULNERABLE (vector 2): raw comment content injected as HTML -->
+        <p class="comment"><strong>{{ c.authorUsername }}:</strong> <span [innerHTML]="c.content | safe:'html'"></span></p>
       }
       @if (auth.currentUser()) {
         <div class="add-comment">
@@ -45,6 +51,7 @@
           />
           <button (click)="addComment(post)">Comment</button>
         </div>
+        <app-copy-hint label="Stored XSS — paste:" [payload]="commentXss" />
       }
     </section>
   </article>

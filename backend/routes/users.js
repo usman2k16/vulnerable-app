@@ -1,7 +1,6 @@
 const express = require('express');
 const { users } = require('../database');
 const { requireAuth } = require('../middleware/auth');
-const { htmlEscape } = require('../utils/escape');
 
 const router = express.Router();
 
@@ -19,11 +18,12 @@ router.get('/api/users/:id', (req, res) => {
 });
 
 // POST /profile/update { bio, email } -- (No CSRF token yet -- that's Phase 4.)
+// VULNERABLE (Commit 2): bio/email stored RAW -> stored XSS via bio (vector 6).
 router.post('/profile/update', requireAuth, (req, res) => {
   const user = users[req.userId];
   const { bio, email } = req.body || {};
-  if (bio !== undefined) user.bio = htmlEscape(bio);
-  if (email !== undefined) user.email = htmlEscape(email);
+  if (bio !== undefined) user.bio = bio;
+  if (email !== undefined) user.email = email;
   res.json({ user: publicUser(user) });
 });
 

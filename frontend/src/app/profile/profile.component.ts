@@ -3,11 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
+import { SafePipe } from '../services/safe.pipe';
+import { CopyHintComponent } from '../shared/copy-hint.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SafePipe, CopyHintComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })
@@ -15,6 +17,9 @@ export class ProfileComponent implements OnInit {
   bio = '';
   email = '';
   saved = false;
+
+  // Commit 2 (XSS): copy-pasteable bio payload shown as a hint.
+  readonly bioXss = `<img src=x onerror="alert('XSS in bio')">`;
 
   constructor(public auth: AuthService, private userService: UserService) {}
 

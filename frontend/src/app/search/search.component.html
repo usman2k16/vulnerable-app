@@ -1,11 +1,16 @@
 <h2>Search posts</h2>
 
-<form class="search-bar" (ngSubmit)="search()">
+<form class="search-bar" (ngSubmit)="submit()">
   <input name="q" [(ngModel)]="q" placeholder="Search by title or content..." />
   <button type="submit">Search</button>
 </form>
 
+<app-copy-hint label="Reflected XSS — search this (it lands in /search?q=):" [payload]="reflectedXss" />
+
 @if (searched) {
+  <!-- VULNERABLE (reflected): the echoed query is injected as HTML -->
+  <p class="result-query">Results for: <span [innerHTML]="resultQuery | safe:'html'"></span></p>
+
   @if (results.length === 0) {
     <p class="empty">No posts matched your search.</p>
   } @else {

@@ -7,7 +7,7 @@ series of commits that introduce, exploit, and then fix real web vulnerabilities
 > ⚠️ **For learning only.** This app intentionally contains (in later commits) insecure code.
 > Never deploy it, and never reuse its vulnerable patterns in real software.
 
-## Phase 0 — Secure baseline (current)
+## Phase 0 — Secure baseline
 
 A fully functional app with **no vulnerabilities yet**:
 
@@ -19,6 +19,47 @@ A fully functional app with **no vulnerabilities yet**:
 
 Later commits will (intentionally) weaken this baseline and then re-harden it. See the
 6-commit plan below.
+
+## Commit 2 — XSS Vulnerabilities Added ⚠️
+
+This commit **intentionally introduces 6 XSS vectors**. Do not treat this state as safe.
+
+A crucial detail specific to Angular: **removing the backend escaping is not enough** — Angular
+escapes and sanitizes by default. Each vector therefore required **two changes**:
+
+1. **Backend** stops escaping the field (stores raw user input), and
+2. **Frontend** deliberately bypasses Angular's sanitizer via a new `SafePipe`
+   (`frontend/src/app/services/safe.pipe.ts`) that calls `DomSanitizer.bypassSecurityTrust*` —
+   the classic real-world Angular XSS footgun.
+
+The CSP in `backend/middleware/headers.js` was also weakened to `'unsafe-inline'`. (In this
+split-origin setup the page is served by `ng serve`, not Express, so this header doesn't govern
+the SPA page yet — the working CSP demo comes in Commit 6. The XSS here fires because of the
+sanitizer bypass.)
+
+| # | Vector | Field | Example payload |
+|---|--------|-------|-----------------|
+| 1 | Stored XSS — post | post content | `<img src=x onerror="alert('XSS in post')">` |
+| 2 | Stored XSS — comment | comment content | `<img src=x onerror="alert('XSS in comment')">` |
+| 3 | Attribute XSS | image alt (set Image URL to `x`) | `" onerror="alert('XSS in attribute')` |
+| 4 | URL XSS | link URL | `javascript:alert('XSS in URL')` |
+| 5 | CSS injection | title color | `red; background: url("https://picsum.photos/seed/xss/600/80")` |
+| 6 | Stored XSS — bio | profile bio | `<img src=x onerror="alert('XSS in bio')">` |
+| 7 | **Reflected** XSS | search query (via `/search?q=`) | `<img src=x onerror="alert('Reflected XSS')">` |
+
+Each payload is shown **in-app as a hint directly under the relevant input** (New Post fields,
+the comment box, and the profile Bio field) so you can paste it where it's used. Payloads use
+`onerror`, not `<script>`, because **browsers never execute `<script>` inserted via
+`innerHTML`** — the script node is parsed but flagged non-executable, so an event handler like
+`onerror`/`onload` is what actually fires.
+
+(The CSRF exploits added in Commit 4 live in `exploits/` as `.html` files — those are real
+attacker pages you open in a browser, not just instructions.)
+
+**XSS types covered:** Stored (vectors 1–6, across HTML / attribute / URL / CSS contexts) and
+**Reflected** (vector 7, via the search query — deliver it with a crafted link like
+`http://localhost:4200/search?q=<img src=x onerror="alert('Reflected XSS')">`). DOM-based XSS is
+intentionally not included. Commit 3 will reverse all of this.
 
 ## Architecture
 

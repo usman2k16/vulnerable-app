@@ -1,18 +1,18 @@
 const express = require('express');
 const { posts, comments, users, nextCommentId } = require('../database');
 const { requireAuth } = require('../middleware/auth');
-const { htmlEscape } = require('../utils/escape');
 
 const router = express.Router();
 
 // POST /posts/:id/comments { content }
+// VULNERABLE (Commit 2): comment content stored RAW -> stored XSS (vector 2).
 router.post('/posts/:id/comments', requireAuth, (req, res) => {
   const post = posts[req.params.id];
   if (!post) return res.status(404).json({ error: 'Post not found' });
   const id = nextCommentId();
   const comment = {
     id,
-    content: htmlEscape(req.body && req.body.content),
+    content: req.body && req.body.content,
     createdBy: req.userId,
     postId: post.id,
     createdAt: new Date().toISOString(),
